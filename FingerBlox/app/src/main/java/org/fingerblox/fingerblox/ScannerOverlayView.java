@@ -5,6 +5,7 @@ import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -67,6 +68,7 @@ public class ScannerOverlayView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         float padding = CameraOverlayView.PADDING;
+
         canvas.drawLine(getWidth() * padding,
                 getHeight() * padding,
                 getWidth() * (1.0f - padding),
@@ -77,6 +79,5 @@ public class ScannerOverlayView extends View {
                 getWidth() * (1.0f - padding),
                 getHeight() * padding,
                 paint);
-
     }
 }

@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.os.AsyncTask;
@@ -15,9 +16,11 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -51,6 +54,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
     private boolean staticTextViewsSet = false;
 
     private CameraOverlayView mOverlayView;
+
     private SurfaceView mCameraProcessPreview;
 
     private boolean doPreview = true;
@@ -146,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.setPictureListener(pictureCallback);
+        // TODO set focus to area when touching screen
 
         takePictureButton = (FloatingActionButton) findViewById(R.id.btn_takepicture);
         assert takePictureButton != null;
@@ -157,6 +162,7 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
             }
         });
 
+        // Diều chỉnh focus
         fixedFocusButton = (FloatingActionButton) findViewById(R.id.btn_fixfocus);
         assert fixedFocusButton != null;
         fixedFocusButton.setOnClickListener(new View.OnClickListener() {
@@ -196,6 +202,51 @@ public class MainActivity extends AppCompatActivity implements CvCameraViewListe
 
         mOverlayView = (CameraOverlayView) findViewById(R.id.overlay);
         assert mOverlayView != null;
+        // TODO set focus to area when touching screen
+        mOverlayView.setOnTouchListener(new View.OnTouchListener() {
+            private long startClickTime;
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+//                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+//                    startClickTime = System.currentTimeMillis();
+//                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+//                    if (System.currentTimeMillis() - startClickTime < ViewConfiguration.getTapTimeout()) {
+//                        // Touch was a simple tap. Do whatever.
+//                    } else {
+//                        // Touch was a not a simple tap.
+//                    }
+//                }
+
+                int x = (int) (event.getX());
+                int y = (int) (event.getY());
+                int areaX = (int) (event.getX()/ view.getWidth()* 2000) - 1000; // Get the X coordinates of the mapping area
+                int areaY = (int) (event.getY()/ view.getWidth ()* 2000) - 1000; // Get the Y coordinates of the mapping region
+                // Create Rect Area
+                Rect focusArea = new Rect();
+                focusArea.left = Math.max (areaX - 50, - 1000); // Take the maximum or minimum to avoid scope overflowing screen coordinates
+                focusArea.top = Math.max(areaY - 50, -1000);
+                focusArea.right = Math.min(areaX + 50, 1000);
+                focusArea.bottom = Math.min(areaY + 50, 1000);
+                Rect focusRect = new Rect(50, 50, 150, 150);
+                mOverlayView.setTouch(true, new Rect(x-50, y-50, x+50, y+50));
+                mOverlayView.invalidate();
+                mOpenCvCameraView.setFocusArea(holdFocus, focusArea, new Camera.AutoFocusCallback() {
+                    @Override
+                    public void onAutoFocus(boolean arg0, Camera arg1) {
+                        //TODO Is there anything we have to do after autofocus?
+                    }
+                });
+                // Update Labels
+                if (viewDeviceInfo) {
+                    if (!staticTextViewsSet) {
+                        staticTextViewsSet = updateStaticTextViews();
+                    }
+                    updateDynamicTextViews();
+                }
+                return true;
+            }
+        });
+
 
         updateStaticTextViews();
 

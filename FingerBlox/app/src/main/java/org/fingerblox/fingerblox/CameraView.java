@@ -6,6 +6,7 @@ import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 
 import org.opencv.android.JavaCameraView;
 
@@ -56,6 +57,7 @@ public class CameraView extends JavaCameraView implements PictureCallback {
     protected void setFixedFocusDistance() {
 
         float padding = 0.2f;
+        // Vùng focus trước camera
         Rect focusRect = new Rect(
                 Math.round(-(0.5f * width) + (padding * width)),
                 Math.round(-(0.5f * height) + (padding * height)),
@@ -82,6 +84,26 @@ public class CameraView extends JavaCameraView implements PictureCallback {
         mCamera.setParameters(parameters);
     }
 
+    protected void setFocusArea(boolean holdFocus, Rect focusRect, Camera.AutoFocusCallback callback) {
+        if (holdFocus) {
+            Camera.Area focusArea = new Camera.Area(focusRect, 1000);
+            ArrayList<Camera.Area> focusAreaList = new ArrayList<>(Collections.singletonList(focusArea));
+            Camera.Parameters parameters = mCamera.getParameters();
+//            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            parameters.setFocusAreas(focusAreaList);
+            try {
+                mCamera.cancelAutoFocus();// Before focusing each time, you need to cancel the focus first.
+                mCamera.setParameters(parameters); //Set camera parameters
+                mCamera.autoFocus(callback); //Open Focus
+            } catch (Exception e) {
+            }
+        }
+    }
+
+
+    // Điều chỉnh focus giữa 2 chế độ "Release focus" : "Hold focus")
+    // hold focus: giữ cố định thông số focus
+    // release focus: Focus tự động lấy theo focusAreaList()
     protected void fixFocusToggle() {
         Camera.Parameters parameters = mCamera.getParameters();
         // parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
@@ -107,4 +129,5 @@ public class CameraView extends JavaCameraView implements PictureCallback {
             return null;
         }
     }
+
 }
